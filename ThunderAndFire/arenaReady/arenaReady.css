@@ -1,0 +1,13 @@
+/* 缩放进入动画 */
+.zoomin3 {
+    transform: scale(1.5);     /* 放大到1.5倍 */
+    opacity: 0.5;              /* 半透明 */
+    transition: transform 0.7s ease, opacity 0.7s ease;
+}
+
+/* 缩放退出动画 */
+.zoomout2 {
+    transform: scale(0.5);     /* 缩小到0.5倍 */
+    opacity: 0;                /* 完全透明 */
+    transition: transform 0.5s ease, opacity 0.5s ease;
+}

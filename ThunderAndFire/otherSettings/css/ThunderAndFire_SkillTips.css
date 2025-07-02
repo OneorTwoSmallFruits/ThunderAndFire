@@ -1,0 +1,28 @@
+/* 背景层样式 */
+.ThunderAndFireBackground {
+    height: 100%; /* 高度设置为100% */
+    width: 100%;  /* 宽度设置为100% */
+    position: absolute; /* 绝对定位 */
+    left: -10%;; /* 左边距为0 */
+    top: 0; /* 上边距为0 */
+    z-index: 16; /* 层级设置为16，确保在其他元素之上 */
+}
+
+/* 技能提示框样式 */
+.ThunderAndFireSkillsTips {
+    width: 20%; /* 宽度为容器的20% */
+    min-height: 5%; /* 最小高度为容器的5% */
+    left: 25%; /* 左边距为容器宽度的50% */
+    top: 25%; /* 上边距为容器高度的50% */
+    font-size: 16px; /* 字体大小为16像素 */
+    color: #ccad76; /* 字体颜色为#ccad76 */
+    font-family: 'shousha'; /* 字体使用'shousha' */
+    background-color: rgba(36, 29, 19, 0.85); /* 背景颜色为半透明的深棕色 */
+    border: #523a24 3px solid; /* 边框为3像素宽的实线，颜色为#523a24 */
+    border-radius: 10px; /* 边角圆润，半径为10像素 */
+    position: absolute; /* 绝对定位 */
+    display: block; /* 显示为块级元素 */
+    padding: 8px; /* 内边距为8像素 */
+    transform: translate(-50%, -50%); /* 元素水平和垂直居中 */
+    transition: none; /* 无过渡效果 */
+}
