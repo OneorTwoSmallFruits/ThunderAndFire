@@ -5,10 +5,6 @@ import { gainCards } from "./gainCards.js";
  */
 export function prepare() {
     const SetPlayerFunc = {
-        diydraw: function () {//测试
-            const player = this;
-            player.draw(7);
-        },
         /**
          * 获取玩家当前拥有的技能列表函数
          * @param {string} type - 类型；
