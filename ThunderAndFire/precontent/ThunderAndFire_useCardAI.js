@@ -1,7 +1,8 @@
 
 import nonameContents from'./nonameContents.js';
 import { ThunderAndFire, setAI} from'./functions.js';
-import { asyncs , oltianshu} from'./asyncs.js';
+import { asyncs } from'./asyncs.js';
+import { oltianshu} from'./oltianshu.js';
 import { 
     character,
     神话再临character, 隐忍天弓character, 鼎足三分character, 星河皓月character,
@@ -9,18 +10,18 @@ import {
     雾山五行character, 爆料体验character, 其他武将character, 异构Bosscharacter,
     测试专属character,
 } from'./characters.js';
-const {
-    setColor, cardAudio, delay, getCardSuitNum, getCardNameNum,
-    compareValue, 
-    compareOrder, compareUseful, checkVcard, checkSkills,
-    chooseCardsToPile, chooseCardsTodisPile, setTimelist,
-} = ThunderAndFire;//银竹离火函数
-const {
-    getTypesCardsSum, getTypesCardsSum_byme, getShaValue, getDamageTrickValue,
-    getTrickValue, getAliveNum,
-} = setAI;
-
-export async function ThunderAndFire_useCardAI(lib,game,ui,get,ai,_status){
+export async function ThunderAndFire_useCardAI(lib, game, ui, get, ai, _status){
+    const {
+        setColor, getDisSkillsTargets, DiycardAudio, cardAudio, 
+        delay, getCardSuitNum, getCardNameNum, compareValue, compareOrder, compareUseful, 
+        chooseCardsToPile, chooseCardsTodisPile, setTimelist, setjudgesResult,
+    } = ThunderAndFire;//银竹离火部分函数
+    const changeSkinskey = lib.config.extension_银竹离火_TAFset_skinschange;//皮肤切换开关
+    const luoshukey = lib.config.extension_银竹离火_TAFset_ice_jiaxu;//蝶贾诩络殊技能池拓展开关
+    const {
+        getTypesCardsSum, getTypesCardsSum_byme, getShaValue, getDamageTrickValue,
+        getTrickValue, getAliveNum, getFriends, getEnemies,
+    } = setAI;
     const TAFcharacters = Object.keys(character);
     lib.skill._ThunderAndFire_useCardAI = {
         ruleSkill: true,

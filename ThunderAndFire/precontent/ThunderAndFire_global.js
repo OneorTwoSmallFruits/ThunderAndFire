@@ -1,39 +1,20 @@
 
 import { ThunderAndFire, setAI} from'./functions.js';
-import { asyncs , oltianshu} from'./asyncs.js';
+import { asyncs } from'./asyncs.js';
+import { oltianshu} from'./oltianshu.js';
+export async function ThunderAndFire_global(lib, game, ui, get, ai, _status){
     const {
-        setColor, cardAudio, delay, getCardSuitNum, getCardNameNum,
-        compareValue, 
-        compareOrder, compareUseful, checkVcard, checkSkills,
-        chooseCardsToPile, chooseCardsTodisPile, setTimelist,
-    } = ThunderAndFire;//银竹离火函数
-const {
-    getSuitSymbol,getNumberSymbol,starszhuanzhen,
-    starssixiang,useSkillsixiang,
-    starsbazhendialog,
-} = asyncs.shu.stars_zhugeliang;//诸葛亮
-export async function ThunderAndFire_global(lib,game,ui,get,ai,_status){
-
+        setColor, getDisSkillsTargets, DiycardAudio, cardAudio, 
+        delay, getCardSuitNum, getCardNameNum, compareValue, compareOrder, compareUseful, 
+        chooseCardsToPile, chooseCardsTodisPile, setTimelist, setjudgesResult,
+    } = ThunderAndFire;//银竹离火部分函数
+    const changeSkinskey = lib.config.extension_银竹离火_TAFset_skinschange;//皮肤切换开关
+    const luoshukey = lib.config.extension_银竹离火_TAFset_ice_jiaxu;//蝶贾诩络殊技能池拓展开关
+    const {
+        getTypesCardsSum, getTypesCardsSum_byme, getShaValue, getDamageTrickValue,
+        getTrickValue, getAliveNum, getFriends, getEnemies,
+    } = setAI;
     const checkTimes = await setTimelist();//如果输入数组自动生成"Before", "Begin", "End", "After"时间节点数组！
-    lib.skill._SetPlayerFunction = {
-        trigger: {
-            global: ["gameStart"],
-        },
-        ruleSkill: true,
-        superCharlotte: true,
-        charlotte: true,
-        silent: true,
-        fixed: true,
-        priority: Infinity,
-        direct: true,
-        filter: function (event, player, name) {
-            return true;
-        },
-        async content(event, trigger, player) {
-            /**其实这个全局也没卵用 */
-            await checkSkills();
-        },
-    };
     //《银竹离火》阵亡、部分角色卡牌语音全局函数
     lib.skill._ThunderAndFire_setaudio = {
         trigger: { player: ['useCardBefore','dieBefore']},

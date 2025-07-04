@@ -1,7 +1,8 @@
 import { lib, game, ui, get, ai, _status } from '../../../../noname.js'
 import nonameContents from'./nonameContents.js';
 import { ThunderAndFire, setAI} from'./functions.js';
-import { asyncs , oltianshu} from'./asyncs.js';
+import { asyncs } from'./asyncs.js';
+import { oltianshu} from'./oltianshu.js';
 import { 
     character,
     神话再临character, 隐忍天弓character, 鼎足三分character, 星河皓月character,
@@ -10,7 +11,7 @@ import {
     测试专属character,
 } from'./characters.js';
 
-const firstSettings = {};
+const firstSettings = { };
 if (!lib.ThunderAndFire) {
     lib.ThunderAndFire = {
         Times:{
@@ -39,10 +40,6 @@ if (!lib.ThunderAndFire) {
 			setSignature:[],//专属卡牌
             setDestroy:[],//销毁设定的卡牌
             setAudio:[],//设定音效的卡牌
-        },
-		disSkills : {
-            list_can : [],//可禁用的技能ID列表
-            list_not : [],//不可禁用的技能ID列表
         },
         func : ThunderAndFire,
         ai: setAI,

@@ -1,56 +1,4 @@
 import { lib, game, ui, get, ai, _status } from '../../../../noname.js'
-
-game.compareValue = function(player,string) {
-    let value = 0;
-    let card = { name: string, nature: '', isCard: true };
-    const info = get.info(card,false);
-    if (info) {
-        const type = info.type;
-        if (!type && typeof type !== "string") return value;
-        const fanyi = lib.translate[string];
-        const fanyi_info = lib.translate[string + "_info"];
-        if (!fanyi || !fanyi_info) return value;
-        const Vvalue = get.value(card,player);
-        if (Vvalue && typeof Vvalue === "number") {
-            value = Vvalue;
-        }
-    }
-    return value;
-};
-game.compareOrder = function(player,string) {
-    let order = 0;
-    let card = { name: string, nature: '', isCard: true };
-    const info = get.info(card,false);
-    if (info) {
-        const type = info.type;
-        if (!type && typeof type !== "string") return order;
-        const fanyi = lib.translate[string];
-        const fanyi_info = lib.translate[string + "_info"];
-        if (!fanyi || !fanyi_info) return order;
-        const Oorder = get.order(card,player);
-        if (Oorder && typeof Oorder === "number") {
-            order = Oorder;
-        }
-    }
-    return order;
-};
-game.compareUseful = function(player,string) {
-    let useful = 0;
-    let card = { name: string, nature: '', isCard: true };
-    const info = get.info(card,false);
-    if (info) {
-        const type = info.type;
-        if (!type && typeof type !== "string") return useful;
-        const fanyi = lib.translate[string];
-        const fanyi_info = lib.translate[string + "_info"];
-        if (!fanyi || !fanyi_info) return useful;
-        const Uuseful = get.useful(card,player);
-        if (Uuseful && typeof Uuseful === "number") {
-            useful = Uuseful;
-        }
-    }
-    return useful;
-};
 /**
  * 本武将包势力转换技设定：游戏开始时，切换至开局设定势力，摸一张牌。
  * 开始死亡时，切换至初始设定势力。
@@ -252,7 +200,7 @@ export const ThunderAndFire = {
         return string;
     },
     /**
-     * 
+     * 获取失效技能相关
      * @param {*} key  - 默认值为 "targets"，可选值为 "skills"。
      * @param {*} target - 目标对象，默认值为 null。
      * @returns - 参数key 为 "targets" 时，返回场上有失效技能的玩家列表。
@@ -343,32 +291,7 @@ export const ThunderAndFire = {
         }
     },
     /**
-     * 
-     * @param {*} player 
-     * @param {*} skill - 技能对象id
-     * @param {*} chatlists - 技能台词列表
-     */
-    chatAudio : function(player,skill,chatlists) {
-        if (!Array.isArray(chatlists) || chatlists.length === 0) return;
-        const skinsID = player.checkSkins();
-        const num = Math.floor(Math.random() * chatlists.length);
-        player.chat(chatlists[num]);
-        const txt = get.translation(skill);
-        player.popup(txt);
-        if (skinsID !== player.name) {
-            const skinPath = '银竹离火/image/ThunderAndFireSkins/audio/' + player.name + '/' + skinsID;
-            game.playAudio('..', 'extension', skinPath, skill + (num + 1));
-            game.log(player,'发动了技能', '#g【'+ txt +'】');
-            return;
-        }
-        if (skinsID === player.name) {
-            game.playAudio('..', 'extension', '银竹离火/audio/skill', skill + (num + 1));
-            game.log(player,'发动了技能', '#g【'+ txt +'】');
-            return;
-        }
-    },
-    /**
-     * 
+     * 卡牌技能效果音效播放。
      * @param {*} event - 事件
      * @param {*} player - 玩家
      * @param {*} info - 默认播放卡牌语音。'effect'表示后续是否增设效果音效
@@ -506,101 +429,89 @@ export const ThunderAndFire = {
         return (actualCardName.has(name) ? actualCardName.get(name) : name).length;
     },
     /**
-     * 玩家将区域内牌数调整至指定数量。
-     * @param {*} player - 玩家
-     * @param {*} num - 将牌调至的数量。
-     * @param {*} from - 默认手牌区，可选值为 'h' 或 'he'。
-     */
-    changeCardsTo : async function(player, num, from = 'h') {
-        if(typeof num !== 'number' || num < 0)  return;
-        const cards = player.getCards(from);
-        const numChange = Math.abs(num - cards.length);
-        if(numChange === 0) return;
-        if (num - cards.length  > 0) {
-            await player.draw(numChange);
-        } else if (num - cards.length < 0) { 
-            await player.chooseToDiscard(numChange, from, true);
-        }
-    },
-    /**
      * 计算某个牌或技能对于特定玩家的价值。
-     * 常用于AI判断
+     * 常用于AI进行决策判断。
      *
      * @param {Object} player - 玩家对象。
-     * @param {string} string - 牌或技能的名称。
-     * @returns {number} - 计算出的牌或技能的价值。
+     * @param {string|Object} infos - 牌的名称（字符串）或牌对象。
+     * @returns {number} - 返回该牌或技能对当前玩家的价值数值。
      */
-    compareValue: function(player,string) {
-        return game.compareValue(player,string);
+    compareValue: function(player,infos) {
+        let value = 0;
+        if (typeof infos !== "string" || typeof infos !== "object") return value;
+        let card;
+        if (typeof infos === "string") {
+            card = { name: infos, nature: '', isCard: true };
+        } else {
+            card = infos;
+        }
+        const info = get.info(card,false);
+        if (!info) return value;
+        if (info.multicheck && !info.multicheck(card, player)) return value;
+        const type = info.type;
+        if (!type && typeof type !== "string") return value;
+        const fanyi = lib.translate[card.name];
+        const fanyi_info = lib.translate[card.name + "_info"];
+        if (!fanyi || !fanyi_info) return value;
+        const Vvalue = get.value(card,player);
+        if (Vvalue && typeof Vvalue === "number") {
+            value = Vvalue;
+        }
+        return value;
     },
     /**
      * 计算某个牌或技能对于特定玩家的优先级。
-     * 常用于AI判断
+     * 常用于AI进行决策判断。
      *
      * @param {Object} player - 玩家对象。
-     * @param {string} string - 牌或技能的名称。
-     * @returns {number} - 计算出的牌或技能的优先级。
+     * @param {string|Object} infos - 牌的名称（字符串）或牌对象。
+     * @returns {number} - 返回该牌或技能对当前玩家的优先级数值。
      */
-    compareOrder: function(player,string) {
-        return game.compareOrder(player,string);
-    },
-    /**
-     * 计算某个牌或技能对于特定玩家的有用程度。
-     *
-     * @param {Object} player - 玩家对象。
-     * @param {string} string - 牌或技能的名称。
-     * @returns {number} - 计算出的牌或技能的有用程度。
-     */
-    compareUseful: function(player,string) {
-        return game.compareUseful(player,string);
-    },
-    /**
-     * 检查事件中的卡牌是否为转化牌
-     */
-    checkVcard: function (trigger) {
-        const card = trigger.card;
-        const cards = trigger.card.cards;
-        if(!card) return false;
-        if(!card.cardid) return true;
-        if(!card.isCard) return true;
-        if(cards && cards.length) {
-            if(cards.length !== 1) return true;
-            if(cards.length === 1) {
-                const name = card.name;
-                if(name === cards[0].name) return false;
-                else return true;
-            }
+    compareOrder: function(player,infos) {
+        let order = 0;
+        if (typeof infos !== "string" || typeof infos !== "object") return order;
+        let card;
+        if (typeof infos === "string") {
+            card = { name: infos, nature: '', isCard: true };
+        } else {
+            card = infos;
         }
-        return false;
-    },
-    /**
-     * 排除本体定义的规则技、固有技、superCharlotte技、卡牌技能等；或未有翻译及定义不可禁用！
-     * 主要是看你尊不遵守规则！凸(艹皿艹 )
-     * 游戏开始是获取
-     */
-    checkSkills : async function() {
-        let {list_can, list_not} = lib.ThunderAndFire.disSkills;
-        const skillslist = lib.skill;
-        if (skillslist) {
-            const keys = Object.keys(skillslist);
-            for (const skill of keys) {
-                const skillData = skillslist[skill];
-                if (
-                    !skillData.ruleSkill && !skillData.fixed && 
-                    !skillData.superCharlotte && !skillData.charlotte && 
-                    !skillData.type && lib.translate[skill] && lib.translate[skill + "_info"]
-                ) {
-                    if (!list_can.includes(skill)) {
-                        list_can.push(skill);
-                    }
-                }
-                else {
-                    if (!list_not.includes(skill)) {
-                        list_not.push(skill);
-                    }
-                }
-            }
+        const info = get.info(card,false);
+        if (!info) return order;
+        if (info.multicheck && !info.multicheck(card, player)) return order;
+        const type = info.type;
+        if (!type && typeof type !== "string") return order;
+        const fanyi = lib.translate[card.name];
+        const fanyi_info = lib.translate[card.name + "_info"];
+        if (!fanyi || !fanyi_info) return order;
+        const Vorder = get.order(card,player);
+        if (Vorder && typeof Vorder === "number") {
+            order = Vorder;
         }
+        return order;
+    },
+    compareUseful: function(player,infos) {
+        let useful = 0;
+        if (typeof infos !== "string" || typeof infos !== "object") return useful;
+        let card;
+        if (typeof infos === "string") {
+            card = { name: infos, nature: '', isCard: true };
+        } else {
+            card = infos;
+        }
+        const info = get.info(card,false);
+        if (!info) return useful;
+        if (info.multicheck && !info.multicheck(card, player)) return useful;
+        const type = info.type;
+        if (!type && typeof type !== "string") return useful;
+        const fanyi = lib.translate[card.name];
+        const fanyi_info = lib.translate[card.name + "_info"];
+        if (!fanyi || !fanyi_info) return useful;
+        const Vuseful = get.useful(card,player);
+        if (Vuseful && typeof Vuseful === "number") {
+            useful = Vuseful;
+        }
+        return useful;
     },
     /**
      * 将牌置入牌堆顶或底。

@@ -1,7 +1,12 @@
 import { lib, game, ui, get, ai, _status } from '../../../../noname.js';
 import { ThunderAndFire, setAI} from'./functions.js';
-import { asyncs , oltianshu} from'./asyncs.js';
-const { setColor } = ThunderAndFire;
+import { asyncs } from'./asyncs.js';
+import { oltianshu} from'./oltianshu.js';
+const {
+    setColor, getDisSkillsTargets, DiycardAudio, cardAudio, 
+    delay, getCardSuitNum, getCardNameNum, compareValue, compareOrder, compareUseful, 
+    chooseCardsToPile, chooseCardsTodisPile, setTimelist, setjudgesResult,
+} = ThunderAndFire;//银竹离火部分函数
 // 🌠·神话再临
 export const 神话再临character = {
     "TAF_zhaoyun": ["male", "shen", 2, ["TAFjuejing","TAFlonghun"], []],
@@ -65,13 +70,7 @@ const 神话再临translate = {
     TAFfanzhuan:"反转",
     TAFfanzhuan_info:"持恒技：<br>　　①判定区中的效果、摸牌与弃牌阶段、准备与结束阶段反转；②判定/出牌阶段，在上家的出牌阶段结束后/下家的判定阶段开始前。",
 };
-const shenguigaodakey = lib.config.extension_银竹离火_TAFset_TAF_shenguigaoda;
-if (shenguigaodakey) {
-    神话再临character["TAF_shenguigaoda_shadow"] = ["male", "shen", "1/2", ["TAF_boss_juejing", "TAF_boss_wushuang","TAF_boss_longhun", "TAF_boss_jiwu", "TAF_boss_shenqu"], []];
-    神话再临Intro["TAF_shenguigaoda_shadow"] = "　　神鬼无前与高达结合体，尽情面对远古传说的恐惧吧！";
-    神话再临translate["TAF_shenguigaoda_shadow"] = "神鬼高达";
-    神话再临translate["TAF_shenguigaoda_shadow_prefix"] = "神鬼高达";
-}
+
 // ☀️·隐忍天弓
 export const 隐忍天弓character = {
     "sun_simayi": ["male", "wei", 3, ["sunquanmou", "sunxiongyi", "sunpingling"], ["doublegroup:wei:jin"]],
@@ -453,7 +452,7 @@ const 欲雨临泽translate = {
 // ❄️·惊鸿玉蝶
 export const 惊鸿玉蝶character = {
     "ice_zhangqiying": ["female", "qun", 3, ["icefalu","icedianhua","icezhenyi"], []],
-    "ice_lvlingqi": ["female", "qun", "3/4", ["icewushuang", "iceshenwu", "iceshenwei"], []],
+    "ice_lvlingqi": ["female", "qun", 3, ["icewushuang", "iceshenwu", "iceshenwei"], []],
     "ice_zhangning": ["female", "qun", 3, ["icetianze", "icedifa"], []],
     "ice_diaochan": ["female", "qun", 3, ["icelijian", "icebiyue"], []],
     "ice_caoying": ["female", "qun", "3/4", ["icelingren", "icefujian"], ["doublegroup:qun:wei"]],
@@ -472,10 +471,10 @@ const 惊鸿玉蝶translate = {
     ice_zhangqiying: "张琪瑛",
     ice_zhangqiying_prefix: "张琪瑛",
     icefalu:"法箓",
-    icefalu_info:"转换技：<br>　　每回合限一次，你可以视为使用或打出一张任意标准基本牌及随机四张〖法箓锦囊〗：阳，随机观看牌堆中至多四张牌，将红/黑牌以任意顺序置于弃牌堆底/顶；阴，随机观看弃牌堆中至多四张牌，将黑/红牌以任意顺序置于牌堆顶/底；以此法放置的牌称为〖法箓〗，然后随机获得至多一张〖法箓〗牌，且〖法箓锦囊〗进入下一循环组。<br><br>　　〖法箓锦囊〗：「标准丨军争丨国战丨应变丨用间丨忠胆丨逐鹿丨运筹」卡牌库中普通锦囊牌，整体为循环列表，每四种牌名为一循环小组，不足则重置并进入下一整体循环！",
+    icefalu_info:"转换技：<br>　　每回合限一次，你可以视为使用或打出任意一张〖法箓锦囊〗：阳，随机观看牌堆中至多四张牌，将红/黑牌以任意顺序置于弃牌堆底/顶；阴，随机观看弃牌堆中至多四张牌，将黑/红牌以任意顺序置于牌堆顶/底；以此法放置的牌称为〖法箓〗，然后随机获得至多一张〖法箓〗牌，且〖法箓锦囊〗进入下一循环组。<br><br>　　〖法箓锦囊〗：「标准丨军争丨国战丨应变丨用间丨忠胆丨逐鹿丨运筹」卡牌库中普通锦囊牌，整体为循环列表，每四种牌名为一循环小组，不足则重置并进入下一整体循环！",
     icefalu_tag:"<font color= #AFEEEE>法箓</font>",
     icedianhua:"点化",
-    icedianhua_info:"锁定技：<br>　　①当你使用或打出法箓牌或转化牌后，交换当前体力值与已损失体力值：体力值因此增加/不变/减少，弃前后差值张牌/失去一点体力/摸前后差值张牌，并移除此牌〖法箓〗标记；<br>　　②手牌上限为已损失体力值数 + 该回合本技能使用次数(且至少为一)。",
+    icedianhua_info:"锁定技：<br>　　①当你使用或打出法箓牌或转化牌后，若当前为满体力值则失去一点体力，否则体力值为正奇数/正偶数，回复一点体力/失去一点体力：以此法失去体力前摸两张牌/回复体力后弃一张牌，并移除此牌〖法箓〗标记。<br>　　②手牌上限 + 该回合本技能使用次数(且至少为一)。",
     icezhenyi:"真仪",
     icezhenyi_info:"　　当一名其他使用法箓牌时，你可为之增加或减少一个目标（目标至少为一），并移除此牌〖法箓〗标记。",
     
@@ -499,11 +498,11 @@ const 惊鸿玉蝶translate = {
     ice_lvlingqi: "吕玲绮",
     ice_lvlingqi_prefix: "吕玲绮",
     iceshenwu:"神武",
-    iceshenwu_info:"　　当你出牌阶段开始时，你可以展示全部手牌，根据你展示的“类型数”获得对应效果：<br>　　丨一类：从牌堆或弃牌堆随机检索一张〖杀〗获得之；<br>　　丨两类：此阶段使用牌无距离限制，第一张〖杀〗和第一张〖决斗〗造成伤害后随机弃置目标区域一张牌；<br>　　丨三类：此阶段使用〖杀〗或〖普通锦囊牌〗可以多指定两个目标，第一张〖杀〗和第一张〖决斗〗造成伤害后，获得牌堆顶三张牌中的所有装备牌和基本牌。",
+    iceshenwu_info:"　　出牌阶段开始时，可以展示全部手牌，根据展示的“类型数”获得对应效果：<br>　　>=1：从牌堆或弃牌堆随机检索一张〖杀〗获得之；<br>　　>=2：此阶段使用牌无距离限制，第一张〖杀〗和第一张〖决斗〗造成伤害后可获得目标区域一张牌；<br>　　>=3：此阶段使用〖杀〗或〖普通锦囊牌〗可以多指定两个目标，并从〖神锋〗〖烈杵〗〖伏魔〗〖金刚〗中随机一个技能获得之，直到你下个出牌阶段开始时。",
     icewushuang:"无双",
-    icewushuang_info:"锁定技：<br>　　你不能成延时锦囊牌的目标；使用〖杀〗或〖决斗〗指定目标后/成为的〖决斗〗目标后，令此牌需要依次使用或打出两张〖闪〗或〖杀〗响应。",
+    icewushuang_info:"锁定技：<br>　　使用〖杀〗或〖决斗〗指定目标后/成为的〖决斗〗目标后，令此牌需要依次使用或打出两张〖闪〗或〖杀〗响应。",
     iceshenwei:"神威",
-    iceshenwei_info:"锁定技：<br>　　当你受到其他角色造成的一点伤害时，其须选择「交给你一张本回合你未记录的花色牌丨随机受到一点无来源的⚡或🔥伤害」。",
+    iceshenwei_info:"锁定技：<br>　　摸牌阶段额外摸两张牌；手牌上限+2；计算与其他角色距离时-1。",
     
     //ice_yanghu: "羊祜",
     //ice_yanghu_prefix: "羊祜",
@@ -542,7 +541,7 @@ const ZQY_compete = lib.config.extension_银竹离火_TAFset_TAF_ZQY_compete;//�
 if(ZQY_compete){
     //〖火烧连营〗〖出其不意〗〖随机应变〗〖推心置腹〗〖弃甲曳兵〗〖树上开花〗〖望梅止渴〗〖偷梁换柱〗
     惊鸿玉蝶translate.icefalu_info = "转换技、参赛版：<br>　　每回合限一次，可将一张牌当作任意〖法箓锦囊〗使用或打出：阳，随机观看牌堆中至多四张牌，将红/黑牌以任意顺序置于弃牌堆底/顶；阴，随机观看弃牌堆中至多四张牌，将黑/红牌以任意顺序置于牌堆顶/底；以此法放置的牌称为〖法箓〗，并随机获得至多一张〖法箓〗牌，然后〖法箓锦囊〗进入下一循环组。<br><br>　　①〖法箓锦囊〗：「火烧连营丨出其不意丨随机应变丨推心置腹丨弃甲曳兵丨树上开花丨望梅止渴丨偷梁换柱」八张普通锦囊牌，整体为循环列表，每两种牌名为一循环小组，不足则重置并进入下一整体循环！②〖法箓〗牌对获得的人可见。";
-    惊鸿玉蝶translate.icedianhua_info = "锁定技、参赛版：<br>　　①当你使用或打出法箓牌或转化牌后，若当前为满体力值则失去一点体力，否则体力值为正奇数/正偶数，回复一点体力/失去一点体力：以此法失去体力前/回复体力后，摸/弃一张牌，并移除此牌〖法箓〗标记。②手牌上限 + 该回合本技能使用次数(且至少为一)。";
+    惊鸿玉蝶translate.icedianhua_info = "锁定技、参赛版：<br>　　①当你使用或打出法箓牌或转化牌后，若当前为满体力值则失去一点体力，否则体力值为正奇数/正偶数，回复一点体力/失去一点体力：以此法失去体力前摸两张牌/回复体力后弃一张牌，并移除此牌〖法箓〗标记。②手牌上限 + 该回合本技能使用次数(且至少为一)。";
     惊鸿玉蝶translate.icezhenyi_info = "参赛版：<br>　　当一名其他使用法箓牌时，你可为之增加或减少一个目标（目标至少为一），并移除此牌〖法箓〗标记。";
 }
 // 🌫️·雾山五行
@@ -746,18 +745,28 @@ const 其他武将translate = {
     minggebi_info:"　　出牌阶段限一次，你可以移去任意张「知」与一名体力值不大于你的其他角色进行拼点，赢的角色令没赢的角色选择一项：<br>　　丨①令对方摸X张牌；<br>　　丨②弃置X张牌；<br>　　丨③失去X点体力<br>　　注：X为当次技能移去「知」的数量。",
 
 };
-const shenlvbukey = lib.config.extension_银竹离火_TAFset_TAF_lvbu_three;
-if (shenlvbukey) {
-    其他武将character["TAF_lvbu_three"] = ["male", "shen", 9, ["TAF_chiyan","TAF_wushuang","TAF_zhankai","TAF_shenfeng","TAF_liechu","TAF_fumo","TAF_jingang","TAF_shenji"], []];
+const BossKey = lib.config.extension_银竹离火_TAFset_TAF_boss;
+if (BossKey) {
+    其他武将character["TAF_lvbu_three"] = ["male", "shen", 5, ["TAF_mashu_shadow","TAF_kuangbao_shadow","TAF_wushuang","TAF_xiuluo_shadow"], []];
     其他武将Intro["TAF_lvbu_three"] = "　　吕布（？～199年2月7日 ），字奉先，号称“飞将”。五原郡九原（今内蒙古包头西北）人。<br>　　东汉末年名将，汉末群雄之一。<br><br>　　吕布初因勇武被并州刺史丁原任为主簿，大见亲待。<br　　>董卓入京之后，诱其杀丁原，并任骑都尉，后任中郎将，封都亭侯，与董卓誓为父子。<br>　　关东军起兵讨董卓，吕布参战，因与将领胡轸不和，被孙坚战败。后被王允、士孙瑞、杨瓒等拉拢，成功刺杀董卓，任职奋威将军，进封温侯，与王允同掌朝政。王允死后，其先后投靠袁术、袁绍、刘备均未遂，故占据徐州一带，自称徐州刺史。<br><br>　　建安三年（198年），吕布被曹操围困数月，后下城投降，最终被曹操缢杀。 <br><br>　　吕布由于小说《三国演义》及各种民间艺术的影响，向来是以“三国第一猛将”的形象存在于后世的心目中。<br><br>　　在历史中，吕布倒戈董卓更是对三国时期的政治格局产生了重要影响。",
     其他武将translate["TAF_lvbu_three"] = "神吕布";
     其他武将translate["TAF_lvbu_three_prefix"] = "神吕布";
-}
+    其他武将translate["TAF_mashu_shadow"] = "马术";
+    其他武将translate["TAF_mashu_shadow_info"] = "锁定技：<br>　　计算与其他角色距离时-1。";
+    其他武将translate["TAF_kuangbao_shadow"] = "狂暴";
+    其他武将translate["TAF_kuangbao_shadow_info"] = "锁定技：<br>　　登场时，获得两枚「狂暴」标记；造成或受到伤害时，获得一枚「狂暴」标记。";
+    其他武将translate["TAF_xiuluo_shadow"] = "修罗";
+    其他武将translate["TAF_xiuluo_shadow_info"] = "锁定技：<br>　　①出牌阶段开始时，若「狂暴」标记数不小于场上存活人数，可弃置所有标记并从〖神锋〗〖烈杵〗〖伏魔〗〖金刚〗中选择一个未拥有的技能获得之，直到你下个出牌阶段开始时；②当你首次杀死一名角色后，选择其中一个技能获得之。";
 
+    其他武将character["TAF_shenguigaoda_shadow"] = ["male", "shen", "1/2", ["TAF_boss_juejing", "TAF_boss_wushuang","TAF_boss_longhun", "TAF_boss_jiwu", "TAF_boss_shenqu"], []];
+    其他武将Intro["TAF_shenguigaoda_shadow"] = "　　神鬼无前与高达结合体，尽情面对远古传说的恐惧吧！";
+    其他武将translate["TAF_shenguigaoda_shadow"] = "神鬼高达";
+    其他武将translate["TAF_shenguigaoda_shadow_prefix"] = "神鬼高达";
+}
 // 🌩️·异构Boss(仅挑战模式)
 export const 异构Bosscharacter = {
     "TAF_lvbu_one": ["male", "shen", 60, ["TAF_mashu","TAF_wushuang","TAF_baguan","TAF_zhanjia","TAF_xuli"], ["boss"]],
-    "TAF_lvbu_two": ["male", "shen", 30, ["TAF_chiyan","TAF_wushuang","TAF_zhankai","TAF_xiuluo","TAF_shenwu"], ["boss","hiddenboss"]],
+    "TAF_lvbu_two": ["male", "shen", 30, ["TAF_chiyan","TAF_wushuang","TAF_zhankai","TAF_xiuluo","TAF_shenwu"], ["hiddenboss","unseen"]],
     "TAF_shenguigaoda": ["male", "shen", "1/2", ["TAF_boss_juejing", "TAF_boss_wushuang","TAF_boss_longhun", "TAF_boss_jiwu", "TAF_boss_shenqu"], ["boss"]],
 };
 const 异构BossIntro = {

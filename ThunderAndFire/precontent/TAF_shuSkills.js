@@ -1,19 +1,19 @@
 import { lib, game, ui, get, ai, _status } from '../../../../noname.js'
 import { ThunderAndFire, setAI} from'./functions.js';
-import { asyncs , oltianshu} from'./asyncs.js';
+import { asyncs } from'./asyncs.js';
+import { oltianshu} from'./oltianshu.js';
 const {
-    setColor, chatAudio, cardAudio, delay, getCardSuitNum, getCardNameNum,
-    compareValue, 
-    compareOrder, compareUseful, checkVcard, checkSkills,
-    chooseCardsToPile, chooseCardsTodisPile, setTimelist,
-    changeCardsTo
-} = ThunderAndFire;//银竹离火函数
+    setColor, getDisSkillsTargets, DiycardAudio, cardAudio, 
+    delay, getCardSuitNum, getCardNameNum, compareValue, compareOrder, compareUseful, 
+    chooseCardsToPile, chooseCardsTodisPile, setTimelist, setjudgesResult,
+} = ThunderAndFire;//银竹离火部分函数
 const changeSkinskey = lib.config.extension_银竹离火_TAFset_skinschange;//皮肤切换开关
 const luoshukey = lib.config.extension_银竹离火_TAFset_ice_jiaxu;//蝶贾诩络殊技能池拓展开关
 const {
     getTypesCardsSum, getTypesCardsSum_byme, getShaValue, getDamageTrickValue,
-    getTrickValue, getAliveNum,
+    getTrickValue, getAliveNum, getFriends, getEnemies,
 } = setAI;
+
 const {
     sunxiongyiAI, sunshangshiAI, thunderguixinAI, tenwintenloseAI,
     thunderxingshangAI,thunderfulongAI,
@@ -173,7 +173,7 @@ const TAF_shuSkills = {
                     const numdraw = numdraw1 + numdraw2;
                     if (numdraw > 0) await player.gainCardsNumbersAndNames(numdraw);
                     if (player.firezhenwuused > player.getDamagedHp()) {
-                        await changeCardsTo(player,player.maxHp,'he');
+                        await player.changeCardsTo(player.maxHp,'he');
                         player.addTempSkill('fire_hz');
                         player.tempdisSkill('firezhenwu');
                         return;
@@ -1532,8 +1532,8 @@ const TAF_shuSkills = {
                 "龙凤在侧，五虎在前，天命在汉，既寿永昌！",
                 "人言为信，日月为明，言日月为证，佑大汉长明！"
             ];
-            chatAudio(player,'firejueqi',chat);
             const target = event.target;
+            player.chatSkill('firejueqi', chat, target, 'fire');
             let result = await target.chooseCard(true, 'h').set('ai', function(card) {
                 const att = get.attitude(target, player);
                 const cards = target.getCards('h');
@@ -1729,7 +1729,7 @@ const TAF_shuSkills = {
                     return false;
                 }).forResult();
                 if (result.bool) {
-                    chatAudio(player,event.name, chat);
+                    player.chatSkill(event.name, chat, target, 'fire');
                     player.draw();
                     player.damage(1, "fire");
                     trigger.num += 1;

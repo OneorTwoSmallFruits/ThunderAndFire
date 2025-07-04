@@ -429,7 +429,7 @@ export function content(config, pack) {
                 '<li>法箓锦囊<li>　　「标准丨军争丨国战丨应变丨用间丨忠胆丨逐鹿丨运筹」卡牌库中普通锦囊牌，整体为循环列表，每四种牌名为一循环小组，不足则重置并进入下一整体循环！'
             ));
             lib.translate.icefalu_info = setColor(
-                '转换技：<br>　　每回合限一次，你可以视为使用或打出一张任意标准基本牌及随机四张〖'+ get.icefalu() +'〗：阳，随机观看牌堆中至多四张牌，将红/黑牌以任意顺序置于弃牌堆底/顶；阴，随机观看弃牌堆中至多四张牌，将黑/红牌以任意顺序置于牌堆顶/底；以此法放置的牌称为〖法箓〗，然后随机获得至多一张〖法箓〗牌，且〖'+ get.icefalu() +'〗进入下一循环组。'
+                '转换技：<br>　　每回合限一次，你可以视为使用或打出任意一张〖'+ get.icefalu() +'〗：阳，随机观看牌堆中至多四张牌，将红/黑牌以任意顺序置于弃牌堆底/顶；阴，随机观看弃牌堆中至多四张牌，将黑/红牌以任意顺序置于牌堆顶/底；以此法放置的牌称为〖法箓〗，然后随机获得至多一张〖法箓〗牌，且〖'+ get.icefalu() +'〗进入下一循环组。'
             );
         }
         //虎牢神吕布
@@ -562,7 +562,7 @@ export function content(config, pack) {
     game.TAFset_Background_Musics = function () {//背景音乐
         let temp = lib.config['extension_银竹离火_TAFset_Background_Musics'];
         if (temp == '0') {
-            const randomNum = Math.floor(Math.random() * (14 - 2 + 1)) + 2;
+            const randomNum = Math.floor(Math.random() * (17 - 2 + 1)) + 2;
             temp = randomNum.toString();
         };
         ui.backgroundMusic.pause();
@@ -580,6 +580,9 @@ export function content(config, pack) {
             "12": "望乡曲.mp3",
             "13": "勿听.mp3",
             "14": "修仙缘.mp3",
+            "15": "道心无畏.mp3",
+            "16": "三国杀.mp3",
+            "17": "新定军山.mp3",
         };
         if (item[temp]) {
             ui.backgroundMusic.src = lib.assetURL + 'extension/银竹离火/audio/backgroundMusic/' + item[temp];

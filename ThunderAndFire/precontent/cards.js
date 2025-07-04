@@ -1,17 +1,17 @@
 import { lib, game, ui, get, ai, _status } from '../../../../noname.js';
 import { ThunderAndFire, setAI} from'./functions.js';
-import { asyncs , oltianshu} from'./asyncs.js';
+import { asyncs } from'./asyncs.js';
+import { oltianshu} from'./oltianshu.js';
 const {
-    setColor, getDisSkillsTargets, DiycardAudio, cardAudio, delay, getCardSuitNum, getCardNameNum,
-    compareValue, 
-    compareOrder, compareUseful, checkVcard, checkSkills,
-    chooseCardsToPile, chooseCardsTodisPile, setTimelist,
-} = ThunderAndFire;//银竹离火函数
+    setColor, getDisSkillsTargets, DiycardAudio, cardAudio, 
+    delay, getCardSuitNum, getCardNameNum, compareValue, compareOrder, compareUseful, 
+    chooseCardsToPile, chooseCardsTodisPile, setTimelist, setjudgesResult,
+} = ThunderAndFire;//银竹离火部分函数
 const changeSkinskey = lib.config.extension_银竹离火_TAFset_skinschange;//皮肤切换开关
 const luoshukey = lib.config.extension_银竹离火_TAFset_ice_jiaxu;//蝶贾诩络殊技能池拓展开关
 const {
     getTypesCardsSum, getTypesCardsSum_byme, getShaValue, getDamageTrickValue,
-    getTrickValue, getAliveNum,getFriends,getEnemies
+    getTrickValue, getAliveNum, getFriends, getEnemies,
 } = setAI;
 const {
     sunxiongyiAI, sunshangshiAI, thunderguixinAI, tenwintenloseAI,
@@ -824,14 +824,14 @@ const basicCards = {//本扩展有趣的基本牌
             basic: {
                 order: function (card, player) {
                     //这个oder和雷闪的卡牌的技能AI作为联动。
-                    return compareOrder(player,"shan") * 1.05;
+                    return compareOrder(player,"shan") * 1.15;
                 },
                 value: function (card, player) {
-                    return Math.min(compareValue(player,"shan") * 1.05, compareValue(player,"tao") * 0.95);
+                    return Math.min(compareValue(player,"shan") * 1.15, compareValue(player,"tao") * 0.95);
                 },
                 useful: function (card) {
                     const player = _status.event.player;
-                    return Math.min(compareUseful(player,"shan") * 1.05, compareUseful(player,"tao") * 0.95);
+                    return Math.min(compareUseful(player,"shan") * 1.15, compareUseful(player,"tao") * 0.95);
                 },
             },
             result: { 

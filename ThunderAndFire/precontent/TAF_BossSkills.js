@@ -1,18 +1,19 @@
 import { lib, game, ui, get, ai, _status } from '../../../../noname.js'
 import { ThunderAndFire, setAI} from'./functions.js';
-import { asyncs , oltianshu} from'./asyncs.js';
+import { asyncs } from'./asyncs.js';
+import { oltianshu} from'./oltianshu.js';
 const {
-    setColor, cardAudio, delay, getCardSuitNum, getCardNameNum,
-    compareValue, 
-    compareOrder, compareUseful, checkVcard, checkSkills,
-    chooseCardsToPile, chooseCardsTodisPile, setTimelist,
-} = ThunderAndFire;//银竹离火函数
+    setColor, getDisSkillsTargets, DiycardAudio, cardAudio, 
+    delay, getCardSuitNum, getCardNameNum, compareValue, compareOrder, compareUseful, 
+    chooseCardsToPile, chooseCardsTodisPile, setTimelist, setjudgesResult,
+} = ThunderAndFire;//银竹离火部分函数
 const changeSkinskey = lib.config.extension_银竹离火_TAFset_skinschange;//皮肤切换开关
 const luoshukey = lib.config.extension_银竹离火_TAFset_ice_jiaxu;//蝶贾诩络殊技能池拓展开关
 const {
     getTypesCardsSum, getTypesCardsSum_byme, getShaValue, getDamageTrickValue,
-    getTrickValue, getAliveNum,
+    getTrickValue, getAliveNum, getFriends, getEnemies,
 } = setAI;
+
 const {
     sunxiongyiAI, sunshangshiAI, thunderguixinAI, tenwintenloseAI,
     thunderxingshangAI,thunderfulongAI,
@@ -27,10 +28,7 @@ const {
     icefaluAI,icefaluOrderAI,longduiAI,icelijianCardsAI,icelingrenguessAI,icejiangxianresultAI
 } = setAI.qun;
 
-const {
-    TAF_Bosslvbu_Vcard, TAF_Bosslvbu_fumo, TAF_Bosslvbu_xuli,
-    initboss_juejing,
-} = asyncs.boss;
+const { TAF_Bosslvbu_xuli,initboss_juejing, } = asyncs.boss;
 
 const 龙魂 = setColor("可以将一张「♦丨♣丨♥丨♠」牌当对应的「火杀丨闪丨桃丨无懈」使用或打出。");
 /** @type { importCharacterConfig['skill'] } */
@@ -77,7 +75,7 @@ const TAF_Bosslvbu = {//虎牢神吕布
         unique:true,
         forced:true,
         init:async function(player, skill) {
-            await player.changeGroup("shen");
+
         },
         filter:function(event, player){
             const card = event.card;
@@ -137,7 +135,12 @@ const TAF_Bosslvbu = {//虎牢神吕布
             effect: {
                 target: function(card, player, target) {
                     if(card && card.name === 'juedou') {
-                        const Tshas = target.countCards("hes", "sha");
+                        const skillKey = target.hasSkill("TAF_boss_longhun");
+                        const Tshas = target.getCards('hes').filter(card => {
+                            const key1 = get.suit(card) === 'diamond';
+                            const key2 = get.name(card) === 'sha';
+                            return (skillKey ? key1 || key2 : key2) && lib.filter.cardEnabled(card, target, "forceEnable");
+                        });
                         const Pshas = player.countCards("hes", "sha");
                         if(Math.floor(Pshas / 2) >= Tshas) return [1, 0];
                         return [0, -2];
@@ -157,7 +160,11 @@ const TAF_Bosslvbu = {//虎牢神吕布
                     });
                     if(card && card.name === 'juedou') {
                         const Tshas = target.countCards("hes", "sha");
-                        const Pshas = player.countCards("hes", "sha");
+                        const Pshas = player.getCards('hes').filter(card => {
+                            const key1 = get.suit(card) === 'diamond';
+                            const key2 = get.name(card) === 'sha';
+                            return (skillKey ? key1 || key2 : key2) && lib.filter.cardEnabled(card, player, "forceEnable");
+                        });
                         if(get.attitude(player, target) < 2 && tiejiKey) {
                             if(Pshas >= Math.floor(Tshas / 2)) {
                                 return [1, 10];
@@ -195,7 +202,6 @@ const TAF_Bosslvbu = {//虎牢神吕布
         forced:true,
         init:function(player, skill) {
             if(!player.TAF_baguan) player.TAF_baguan = false;
-            ui.backgroundMusic.src = lib.assetURL + 'extension/银竹离火/audio/征战虎牢.mp3';
         },
         filter: function (event, player, name) {
             if(name === 'phaseEnd') return event.player != player;
@@ -471,6 +477,10 @@ const TAF_Bosslvbu = {//虎牢神吕布
         unique:true,
         forced:true,
         direct:true,//必须要！
+        hulaoBGM:function(){
+            ui.backgroundMusic.pause();
+            ui.backgroundMusic.src = lib.assetURL + 'extension/银竹离火/audio/gameBGM/征战虎牢.mp3';
+        },
         init:function(player, skill) {
             if(!player.TAF_Bosslvbu) player.TAF_Bosslvbu = [];
             if(!player.setTAF_Bosslvbu) player.setTAF_Bosslvbu = false;
@@ -485,7 +495,9 @@ const TAF_Bosslvbu = {//虎牢神吕布
             player.logSkill('TAF_xiuluo');
             player.TAF_Bosslvbu = skills.filter(key => key !== addskill);
             game.log(player, "获得了技能：", addskill);
-            ui.backgroundMusic.src = lib.assetURL + 'extension/银竹离火/audio/征战虎牢.mp3';
+            const hulaoBGM = lib.skill.TAF_xiuluo.hulaoBGM;
+            hulaoBGM();
+            ui.backgroundMusic.addEventListener('ended', hulaoBGM);
         },
         filter:function(event, player){
             const name = player.name;
@@ -532,12 +544,10 @@ const TAF_Bosslvbu = {//虎牢神吕布
             let evtU = trigger.getParent("phaseUse");
             let evtP = trigger.getParent("phase");
             if (evtU && evtU.name == "phaseUse" && evtU.player !== player) {
-                ui.backgroundMusic.src = lib.assetURL + 'extension/银竹离火/audio/征战虎牢.mp3';
                 evtU.skipped = true;
                 player.insertPhase("TAF_xiuluo");
                 return;
             } else if (evtP && evtP.name == "phase" && evtP.player !== player) {
-                ui.backgroundMusic.src = lib.assetURL + 'extension/银竹离火/audio/征战虎牢.mp3';
                 evtP.finish();
                 player.insertPhase("TAF_xiuluo");
                 return;
@@ -695,18 +705,19 @@ const TAF_Bosslvbu = {//虎牢神吕布
         async content(event, trigger, player) {
             const Time = event.triggername;
             async function setSkill(string) {
-                const Pile = ui.cardPile.childNodes.length;
-                if(Pile < 6) await game.washCard();
-                const Pilewashed = ui.cardPile.childNodes.length;
-                const disPile = ui.discardPile.childNodes.length;
-                if(Pilewashed + disPile < 6) return;//避免牌堆不够的BUG
-                player.logSkill(event.name);
+                const Pilenum = ui.cardPile.childNodes.length;
+                const disPilenum = ui.discardPile.childNodes.length;
                 let setcards = [];
                 if(string === "top") {
-                    setcards = get.cards(6);
+                    const getnum = Math.min(6, Pilenum);
+                    if(getnum === 0) return;//避免牌堆不够的BUG
+                    setcards = get.cards(getnum);
                 } else if(string === "low") {
-                    setcards = get.bottomCards(6);
+                    const getnum = Math.min(6, disPilenum);
+                    if(getnum === 0) return;//避免牌堆不够的BUG
+                    setcards = get.bottomCards(getnum);
                 }
+                player.logSkill(event.name);
                 game.cardsGotoOrdering(setcards);
                 let gaincards = [];
                 let throwcards = [];
@@ -733,7 +744,6 @@ const TAF_Bosslvbu = {//虎牢神吕布
                 }
             };
             if(Time === "damageAfter") {
-                player.logSkill(event.name);
                 const checkBossVcard = player.checkBossVcard(trigger);
                 if(checkBossVcard){//转化牌
                     player[trigger.card.name + 'Vcount']++;
@@ -860,6 +870,9 @@ const TAF_Bosslvbu = {//虎牢神吕布
                 }
                 return result;
             },
+            markcount:function (storage, player) {
+                return player.TAF_jingang.length || 0;
+            },
             onunmark: true,
             name:"<font color= #EE9A00>金刚</font>",
         },
@@ -884,8 +897,7 @@ const TAF_Bosslvbu = {//虎牢神吕布
             } else if(name === "damageAfter") {
                 if(!event.source) return false;
                 if(event.source === player) return false;
-                if(!player.hasSkillTag("respondTao")) return false;
-                return player.countCards("h", "tao") > 0 && event.num > 0;
+                return event.num > 0;
             } else if(name === "phaseAfter") {
                 player.unmarkSkill('TAF_jingang');
                 player.TAF_jingang = [];
@@ -925,10 +937,13 @@ const TAF_Bosslvbu = {//虎牢神吕布
                 while (count > 0) {
                     count--;
                     await player.draw(2);
-                    let TXT = setColor("〖金刚〗：是否使用一张桃？");
-                    const buttons =  await player.chooseToUse({ name: "tao" }, TXT).forResult();
-                    if (buttons.bool) {
-                        player.logSkill(event.name);
+                    const Tao = {name: "tao", nature: "", isCard: true}
+                    if(player.countCards("hes", "tao") > 0 && lib.filter.cardEnabled(Tao, player, "forceEnable")) {
+                        const TXT = setColor("〖金刚〗：是否使用一张桃？");
+                        const buttons =  await player.chooseToUse({ name: "tao" }, TXT).forResult();
+                        if (buttons.bool) {
+                            player.logSkill(event.name);
+                        }
                     }
                 }
             }
@@ -942,22 +957,19 @@ const TAF_Bosslvbu = {//虎牢神吕布
                     const damage = get.tag(card, "damage");
                     if (damage) {
                         if (player.hasSkillTag("jueqing", false, target)) return [1, -2];
-                        const hps = target.hp;
-                        let Enemyshps = 0;
-                        const Enemys = game.filterPlayer(o => o.isAlive() && get.attitude(target, o) < 2);
-                        if (Enemys && Enemys.length > 0) {
-                            for (const enemy of Enemys) {
-                                Enemyshps += enemy.hp;
-                            }
-                        }
                         const setsuits = ['spade', 'heart', 'club', 'diamond'];
                         const getsuitslist = target.TAF_jingang;
+                        const compareHp = Math.max(1, Math.floor(player.maxHp / 3));
                         const uninsuits = setsuits.filter(suit => !getsuitslist.includes(suit));
-                        if (uninsuits.length === 0) return [1, 0, 0, -1];
+                        if (uninsuits.length === 0) {
+                            if (getAliveNum(player, 1) <= compareHp) {
+                                return [1, 2, 1, -4];
+                            }
+                            return [1, 1, 1, 1];
+                        }
                         const unincards = player.getCards('he').filter(card => uninsuits.includes(get.suit(card)));
-                        if (!unincards || unincards.length === 0) return [1, 0, 0, -1];
-                        if (hps <= 15) return [1, -2, 0, 1];
-                        if (hps > 15 || hps > Enemyshps * 2) return [1, 1, 0, 1];
+                        if (!unincards || unincards.length === 0) return [1, 2, 1, -4];
+                        return [1, 1, 1, 1];
                     }
                 },
             },
@@ -1069,7 +1081,9 @@ const TAF_Bosslvbu = {//虎牢神吕布
         },
         "_priority":Infinity,
     },
-
+    /**
+     * 其他设定
+     */
     TAF_shenwu:{//扯淡技能！
         superCharlotte: true,
         charlotte: true,
@@ -1166,6 +1180,138 @@ const TAF_Bosslvbu = {//虎牢神吕布
             }
         },
         "_priority":0,
+    },
+
+
+    TAF_mashu_shadow:{
+        mod:{
+            globalFrom: function(from, to, distance) {
+                return distance - 1;
+            },
+        },
+        forced:true,
+        ai: {
+            threaten: 1,
+        },
+        "_priority":Infinity,
+    },
+    TAF_kuangbao_shadow:{
+        audio:"ext:银竹离火/audio/skill:2",
+        marktext:"<font color= #EE9A00>狂暴</font>",
+        intro:{
+            content: function (storage, player) {
+                const nummark = player.countMark('TAF_kuangbao_shadow');
+                return '「狂暴」标记数量为' + nummark;
+            },
+            markcount:function (storage, player) {
+                return player.countMark('TAF_kuangbao_shadow') || 0;
+            },
+            onunmark: true,
+            name:"<font color= #EE9A00>狂暴</font>",
+        },
+        trigger:{
+            player: ["damageBegin"],
+            source: ["damageBegin"],
+        },
+        firstDo: true,
+        unique:true,
+        forced:true,
+        init: async function(player, skill) {
+            player.addMark(skill, 2);
+            player.logSkill(skill);
+        },
+        filter:function(event, player){
+            const source = event.source;
+            return source && event.num && event.num > 0;
+        },
+        async content(event, trigger, player) {
+            player.addMark(event.name, trigger.num);
+        },
+        ai: {
+            threaten: 3,
+        },
+        "_priority":Infinity,
+    },
+    TAF_xiuluo_shadow:{
+        audio:"ext:银竹离火/audio/skill:2",
+        trigger:{
+            player:["phaseUseBegin"],
+            global:["dieAfter"],
+        },
+        firstDo: true,
+        unique:true,
+        forced:true,
+        direct:true,//必须要！
+        init:function(player, skill) {
+            player.TAF_xiuluo_shadow = ['TAF_shenfeng','TAF_liechu','TAF_fumo','TAF_jingang'];
+            player.TAF_xiuluo_shadow_dieAfter = false;
+        },
+        filter:function(event, player, name){
+            if(name === "phaseUseBegin") {
+                const skills = player.TAF_xiuluo_shadow.filter(skill => !player.hasSkill(skill));
+                if(!skills || skills.length === 0) return;
+                return player.countMark('TAF_kuangbao_shadow') >= game.filterPlayer(o => o.isAlive()).length;
+            } else {
+                return event.source && event.source === player && !player.TAF_xiuluo_shadow_dieAfter;
+            }
+        },
+        derivation: ['TAF_shenfeng','TAF_liechu','TAF_fumo','TAF_jingang'],
+        async content(event, trigger, player) {
+            const Time = event.triggername;
+            let skills = [];
+            let prompt = '';
+            if(Time === "phaseUseBegin") {
+                skills = player.TAF_xiuluo_shadow.filter(skill => !player.hasSkill(skill));
+                prompt = setColor("〖修罗〗：请选择获得其中一个技能，直到下个出牌阶段开始时：");
+            } else {
+                skills = player.TAF_xiuluo_shadow;
+                prompt = setColor("〖修罗〗：请选择获得其中一个技能：");
+            }
+            if(!skills || skills.length === 0) return;
+            const lists = skills.concat(['cancel2']);
+            const result = await player.chooseControl(lists).set('prompt', prompt).set ("ai", () => {
+                const damageCards = player.getCards('hes').filter(card => get.tag(card, "damage") >= 1);
+                const canValueCards = damageCards.filter(card =>
+                    player.hasUseTarget(card) && player.hasValueTarget(card) && player.getUseValue(card) > 0
+                );
+                const equipCards = player.getCards('hs').filter(card =>
+                    get.type(card) === 'equip' && lib.filter.cardEnabled(card, player, "forceEnable")
+                );
+                if (Time === "phaseUseBegin") {
+                    if (canValueCards.length >= 1) {
+                        const possibleSkills = lists.filter(skill =>
+                            skill === 'TAF_shenfeng' || skill === 'TAF_liechu'
+                        );
+                        return possibleSkills.length > 0 ? possibleSkills.randomGet() : 'cancel2';
+                    }
+                    if (equipCards.length > 0 && lists.includes('TAF_fumo')) return 'TAF_fumo';
+                    return lists.includes('TAF_jingang') ? 'TAF_jingang' : 'cancel2';
+                } else {
+                    const priorityOrder = ['TAF_jingang', 'TAF_shenfeng', 'TAF_fumo', 'TAF_liechu'];
+                    for (const skill of priorityOrder) {
+                        if (lists.includes(skill)) return skill;
+                    }
+                    return 'cancel2';
+                }
+            }).forResult();
+            if(result.control === 'cancel2') return;
+            if(Time === "phaseUseBegin") {
+                player.logSkill(event.name);
+                player.clearMark('TAF_kuangbao_shadow');
+                player.addTempSkill(result.control, { player: 'phaseUseBegin' });
+            } else {
+                player.logSkill(event.name,trigger.player);
+                player.TAF_xiuluo_shadow_dieAfter = true;
+                if(player.hasSkill(result.control)) player.removeSkill(result.control);
+                player.addSkill(result.control);
+                player.update();
+            }
+            game.log(player, "获得了技能：", result.control);
+        },
+        ai: {
+            threaten: 3,
+        },
+        "_priority":Infinity,
     },
 };
 /** @type { importCharacterConfig['skill'] } */
@@ -1417,7 +1563,12 @@ const TAF_shenguigaoda = {//神鬼高达
             effect: {
                 target: function(card, player, target) {
                     if(card && card.name === 'juedou') {
-                        const Tshas = target.countCards("hes", "sha");
+                        const skillKey = target.hasSkill("TAF_boss_longhun");
+                        const Tshas = target.getCards('hes').filter(card => {
+                            const key1 = get.suit(card) === 'diamond';
+                            const key2 = get.name(card) === 'sha';
+                            return (skillKey ? key1 || key2 : key2) && lib.filter.cardEnabled(card, target, "forceEnable");
+                        });
                         const Pshas = player.countCards("hes", "sha");
                         if(Math.floor(Pshas / 2) >= Tshas) return [1, 0];
                         return [0, -2];
@@ -1437,7 +1588,11 @@ const TAF_shenguigaoda = {//神鬼高达
                     });
                     if(card && card.name === 'juedou') {
                         const Tshas = target.countCards("hes", "sha");
-                        const Pshas = player.countCards("hes", "sha");
+                        const Pshas = player.getCards('hes').filter(card => {
+                            const key1 = get.suit(card) === 'diamond';
+                            const key2 = get.name(card) === 'sha';
+                            return (skillKey ? key1 || key2 : key2) && lib.filter.cardEnabled(card, player, "forceEnable");
+                        });
                         if(get.attitude(player, target) < 2 && tiejiKey) {
                             if(Pshas >= Math.floor(Tshas / 2)) {
                                 return [1, 10];
@@ -1455,7 +1610,7 @@ const TAF_shenguigaoda = {//神鬼高达
                         if(get.attitude(player, target) < 2 && tiejiKey) {
                             return [1, 10];
                         } else {
-                            if(Tshans < 2) return [1, 0];
+                            if(Tshans < 2) return [1, 1];
                         }
                     }
                 },

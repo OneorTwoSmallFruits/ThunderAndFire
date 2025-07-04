@@ -1,18 +1,17 @@
 import { lib, game, ui, get, ai, _status } from '../../../../noname.js'
 import { ThunderAndFire, setAI} from'./functions.js';
-import { asyncs , oltianshu} from'./asyncs.js';
+import { asyncs } from'./asyncs.js';
+import { oltianshu} from'./oltianshu.js';
 const {
-    setColor, cardAudio, delay, getCardSuitNum, getCardNameNum,
-    compareValue, 
-    compareOrder, compareUseful, checkVcard, checkSkills,
-    chooseCardsToPile, chooseCardsTodisPile, setTimelist,
-    changeCardsTo,
-} = ThunderAndFire;//银竹离火函数
+    setColor, getDisSkillsTargets, DiycardAudio, cardAudio, 
+    delay, getCardSuitNum, getCardNameNum, compareValue, compareOrder, compareUseful, 
+    chooseCardsToPile, chooseCardsTodisPile, setTimelist, setjudgesResult,
+} = ThunderAndFire;//银竹离火部分函数
 const changeSkinskey = lib.config.extension_银竹离火_TAFset_skinschange;//皮肤切换开关
 const luoshukey = lib.config.extension_银竹离火_TAFset_ice_jiaxu;//蝶贾诩络殊技能池拓展开关
 const {
     getTypesCardsSum, getTypesCardsSum_byme, getShaValue, getDamageTrickValue,
-    getTrickValue, getAliveNum,getFriends
+    getTrickValue, getAliveNum, getFriends, getEnemies,
 } = setAI;
 const { changeCharacter, initfanzhuan } = asyncs.qun.TAF_tongyu;
 const { shenwangjingtu } = asyncs.qun.TAF_jiangtaixu;
@@ -1691,7 +1690,7 @@ const TAF_shenhuaSkills = {
                     game.log(player, '满足连续三次递增');
                     player.logSkill(event.name);
                     const targets = game.filterPlayer(O => O.isAlive());
-                    if (targets.length) await changeCardsTo(player,targets.length);
+                    if (targets.length) await player.changeCardsTo(targets.length);
                     return;
                 } else if (isDecreasing) {
                     game.log(player, '满足连续三次递减');
@@ -2133,7 +2132,7 @@ const TAF_shenhuaSkills = {
         },
         async content(event, trigger, player) {
             trigger.nature = 'ice';
-            await changeCardsTo(player, 4);
+            await player.changeCardsTo(4);
         },
         ai:{
             effect: {

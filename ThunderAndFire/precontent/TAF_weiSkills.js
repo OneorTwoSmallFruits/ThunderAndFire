@@ -1,19 +1,19 @@
 import { lib, game, ui, get, ai, _status, Get } from '../../../../noname.js'
 import { ThunderAndFire, setAI} from'./functions.js';
-import { asyncs , oltianshu} from'./asyncs.js';
+import { asyncs } from'./asyncs.js';
+import { oltianshu} from'./oltianshu.js';
 const {
-    setColor, getDisSkillsTargets, cardAudio, delay, getCardSuitNum, getCardNameNum,
-    compareValue, 
-    compareOrder, compareUseful, checkVcard, checkSkills,
-    chooseCardsToPile, chooseCardsTodisPile, setTimelist,
-    changeCardsTo
-} = ThunderAndFire;//银竹离火函数
+    setColor, getDisSkillsTargets, DiycardAudio, cardAudio, 
+    delay, getCardSuitNum, getCardNameNum, compareValue, compareOrder, compareUseful, 
+    chooseCardsToPile, chooseCardsTodisPile, setTimelist, setjudgesResult,
+} = ThunderAndFire;//银竹离火部分函数
 const changeSkinskey = lib.config.extension_银竹离火_TAFset_skinschange;//皮肤切换开关
 const luoshukey = lib.config.extension_银竹离火_TAFset_ice_jiaxu;//蝶贾诩络殊技能池拓展开关
 const {
     getTypesCardsSum, getTypesCardsSum_byme, getShaValue, getDamageTrickValue,
-    getTrickValue, getAliveNum,
+    getTrickValue, getAliveNum, getFriends, getEnemies,
 } = setAI;
+
 const {
     sunxiongyiAI, sunshangshiAI, thunderguixinAI, tenwintenloseAI,
     thunderxingshangAI,thunderfulongAI,thunderlvliAI,thunderquediAI,

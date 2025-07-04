@@ -1,19 +1,19 @@
 import { lib, game, ui, get, ai, _status } from '../../../../noname.js'
 import { ThunderAndFire, setAI} from'./functions.js';
-import { asyncs , oltianshu} from'./asyncs.js';
+import { asyncs } from'./asyncs.js';
+import { oltianshu} from'./oltianshu.js';
 const {
-    setColor, chatAudio, cardAudio, delay, getCardSuitNum, getCardNameNum,
-    compareValue, 
-    compareOrder, compareUseful, checkVcard, checkSkills,
-    chooseCardsToPile, chooseCardsTodisPile, setTimelist,
-    setjudgesResult
-} = ThunderAndFire;//银竹离火函数
+    setColor, getDisSkillsTargets, DiycardAudio, cardAudio, 
+    delay, getCardSuitNum, getCardNameNum, compareValue, compareOrder, compareUseful, 
+    chooseCardsToPile, chooseCardsTodisPile, setTimelist, setjudgesResult,
+} = ThunderAndFire;//银竹离火部分函数
 const changeSkinskey = lib.config.extension_银竹离火_TAFset_skinschange;//皮肤切换开关
 const luoshukey = lib.config.extension_银竹离火_TAFset_ice_jiaxu;//蝶贾诩络殊技能池拓展开关
 const {
     getTypesCardsSum, getTypesCardsSum_byme, getShaValue, getDamageTrickValue,
-    getTrickValue, getAliveNum,getFriends,getEnemies
+    getTrickValue, getAliveNum, getFriends, getEnemies,
 } = setAI;
+
 const {
     sunxiongyiAI, sunshangshiAI, thunderguixinAI, tenwintenloseAI,
     thunderxingshangAI,thunderfulongAI,
@@ -1966,9 +1966,9 @@ const TAF_MoonAndStarsSkills = {
             const names_one = ['moon_zhouyu', 'moon_zhouyu1', 'moon_zhouyu2'];
             const names_two = ['moon_zhouyu3', 'moon_zhouyu4'];
             if (names_two.includes(skinsID)) {
-                chatAudio(player,event.name,chat2);
+                player.chatSkill(event.name,chat2);
             } else if (names_one.includes(skinsID)) {
-                chatAudio(player,event.name,chat1);
+                player.chatSkill(event.name,chat1);
             } else {
                 player.logSkill(event.name);
             }
@@ -2098,18 +2098,9 @@ const TAF_MoonAndStarsSkills = {
                 return;
             } else {
                 const tags = ['moonqinyin_tag', 'moonqishi_tag', 'moonshubi_tag', 'moonhuayi_tag'];
-                const object = player.checkloseTags(event);
-                if (object.tags.length > 0) {
-                    for (let taglist of object.tags) {
-                        if (taglist && taglist.length > 0) {
-                            for (let tag of taglist) {
-                                if (tags.includes(tag)) {
-                                    return true;
-                                }
-                            }
-                        }
-                    }
-                }
+                const gettags = player.checkloseTags(event).tags;
+                if (!gettags ||!Array.isArray(gettags) || gettags.length === 0) return false;
+                return gettags.some(list => Array.isArray(list) && list.some(tag => tags.includes(tag)));
             }
         },
         async content(event, trigger, player) {
@@ -2123,10 +2114,6 @@ const TAF_MoonAndStarsSkills = {
                     else player[key] = numset;
                 }
             } else {
-                const usedkeys = ['qinyinused', 'qishiused','shubiused', 'huayiused'];
-                for (let key of usedkeys) {
-                    if (!player[key]) player[key] = 0;
-                }
                 const tagsMapping = {
                     moonqinyin_tag: { key: 'qinyin', usedKey: 'qinyinused', setNum: 'moonqinyin' },
                     moonqishi_tag: { key: 'qishi', usedKey: 'qishiused', setNum: 'moonqishi' },
@@ -2134,21 +2121,17 @@ const TAF_MoonAndStarsSkills = {
                     moonhuayi_tag: { key: 'huayi', usedKey: 'huayiused', setNum: 'moonhuayi' },
                 };
                 let count = 0;
-                const object = player.checkloseTags(trigger);
-                if (object.tags.length > 0) {
-                    for (let taglist of object.tags) {
-                        if (taglist && taglist.length > 0) {
-                            for (let tag of taglist) {
-                                const mapping = tagsMapping[tag];
-                                if (mapping) {
-                                    const used = player[mapping.usedKey];
-                                    const setnum = Math.max(1, player[mapping.setNum] || 0);
-                                    if (used < setnum) {
-                                        await losemoontags(player, mapping.key);
-                                        player[mapping.usedKey]++;
-                                        count++;
-                                    }
-                                }
+                const gettags = player.checkloseTags(trigger).tags;
+                for (let taglist of gettags) {
+                    for (let tag of taglist) {
+                        const mapping = tagsMapping[tag];
+                        if (mapping) {
+                            const used = player[mapping.usedKey];
+                            const setnum = Math.max(1, player[mapping.setNum] || 0);
+                            if (used < setnum) {
+                                await losemoontags(player, mapping.key);
+                                player[mapping.usedKey]++;
+                                count++;
                             }
                         }
                     }
@@ -2170,9 +2153,9 @@ const TAF_MoonAndStarsSkills = {
                     const names_one = ['moon_zhouyu', 'moon_zhouyu1', 'moon_zhouyu2'];
                     const names_two = ['moon_zhouyu3', 'moon_zhouyu4'];
                     if (names_two.includes(skinsID)) {
-                        chatAudio(player,event.name,chat2);
+                        player.chatSkill(event.name,chat2);
                     } else if (names_one.includes(skinsID)) {
-                        chatAudio(player,event.name,chat1);
+                        player.chatSkill(event.name,chat1);
                     } else {
                         player.logSkill(event.name);
                     }
@@ -2222,9 +2205,8 @@ const TAF_MoonAndStarsSkills = {
             player:"useCard",
             global:"phaseAfter",
         },
-        persevereSkill:true,
-        charlotte:true,
         unique:true,
+        charlotte:true,
         direct:true,
         filter:function (event, player, name) {
             if (name === "useCard") {
@@ -2269,9 +2251,8 @@ const TAF_MoonAndStarsSkills = {
             player:"useCard",
             global:"phaseAfter",
         },
-        persevereSkill:true,
-        charlotte:true,
         unique:true,
+        charlotte:true,
         direct:true,
         filter:function (event, player, name) {
             if (name === "useCard") {
@@ -2302,33 +2283,24 @@ const TAF_MoonAndStarsSkills = {
         async content(event, trigger, player) {
             const Time = event.triggername;
             if (Time === "phaseAfter") return;
-            const target = game.filterPlayer(function(current) {
+            const targets = game.filterPlayer(function(current) {
                 return !trigger.targets.includes(current) && 
                 lib.filter.targetEnabled2(trigger.card, player, current) && 
                 lib.filter.targetInRange(trigger.card, player, current);
             });
-            if (target.length > 0) {
-                const num = Math.min(2, target.length);
+            if (targets.length > 0) {
+                const num = Math.min(2, targets.length);
                 const TXT =  setColor("是否为〖" + get.translation(trigger.card) + "〗增加至多" + num + "个额外目标？");
                 const result = await player.chooseTarget(TXT, [1, Math.min(2, num)], function (card, player, target) {
-                    return !trigger.targets.includes(target) && 
-                    lib.filter.targetEnabled2(trigger.card, player, target) && 
-                    lib.filter.targetInRange(trigger.card, player, target);
+                    return targets.includes(target);
                 }).set("ai", function (target) {
-                    const player = _status.event.player;
                     const card = _status.event.getTrigger().card;
                     return get.effect(target, card, player, player);
                 }).forResult();
                 if (result.bool) {
                     const targets = result.targets.sortBySeat();
-                    let fanyilist = [];
-                    for (const target of targets) {
-                        const fanyi = get.translation(target);
-                        if (fanyi) {
-                            fanyilist.push(fanyi);
-                        }
-                    }
-                    game.log(player, "为〖" + get.translation(trigger.card) + "〗额外指定了：" + fanyilist.join("、"));
+                    const fanyilist = targets.map(target => get.translation(target)).join("、");
+                    game.log(player, "为〖" + get.translation(trigger.card) + "〗额外指定了：" + fanyilist + "！");
                     for (let target of targets) {
                         if (!trigger.targets.includes(target)) {
                              trigger.targets.push(target);

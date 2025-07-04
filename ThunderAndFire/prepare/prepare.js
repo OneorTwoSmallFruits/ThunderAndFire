@@ -233,8 +233,8 @@ export function prepare() {
                         if (card.cardid === key) {
                             if (!checktags.cards.includes(card)) {
                                 checktags.cards.push(card);
-                                checktags.tags.push(gaintagMap[key]);
                             }
+                            checktags.tags.push(gaintagMap[key]);
                         }
                         
                     }
@@ -480,6 +480,140 @@ export function prepare() {
                 return a.hp - b.hp;
             });
         },
+        /**
+         * 触发技能时的聊天提示、播放音效和记录日志功能。
+         *
+         * @param {string} skill - 技能名称，必须存在于 `lib.skill` 或技能信息中。
+         * @param {Array<string>} [chatlists] - 可选参数，包含触发技能时随机显示的聊天语句数组。
+         * @param {Player|Array<Player>} [targets] - 可选参数，表示技能作用的目标玩家或玩家数组。
+         * @param {string|boolean} [nature=false] - 可选参数，表示技能连线的颜色。若为 `false` 则不画线。
+         * 
+         * @returns {void} 无返回值。
+         *
+         * 此函数会：
+         * 1. 检查技能是否存在；
+         * 2. 若提供了 `chatlists`，则从中随机选择一条消息通过 `player.chat()` 发送；
+         * 3. 根据当前皮肤播放对应的技能音效；
+         * 4. 如果有目标，则绘制技能连线并记录日志；
+         * 5. 记录技能使用事件到游戏日志和玩家技能历史；
+         * 6. 如果没有提供 `chatlists`，则直接调用默认的日志记录方法 `同步本体的logskill和useskill事件。`。
+         */
+        chatSkill : function(skill, chatlists, targets, nature) {
+            const info1 = lib.skill[skill];
+            const info2 = get.info(skill,false);
+            if (!info1 || !info2) return;
+            const player = this;
+            if (get.itemtype(targets) == "player") {
+                targets = [targets];
+            }
+            if (chatlists && Array.isArray(chatlists) && chatlists.length) {
+                const skinsID = player.checkSkins();
+                const num = Math.floor(Math.random() * chatlists.length);
+                player.chat(chatlists[num]);
+                player.popup(get.skillTranslation(skill, player));
+                const skinPath = skinsID !== player.name 
+                    ? '银竹离火/image/ThunderAndFireSkins/audio/' + player.name + '/' + skinsID 
+                    : '银竹离火/audio/skill';
+
+                game.playAudio('..', 'extension', skinPath, skill + (num + 1));
+                let str;
+                if (Array.isArray(targets) && targets.length) {
+                    str = targets.map(target => 
+                        target === player ? "#b自己" : get.translation(target)
+                    ).join('、');
+                    if (nature !== false) {
+                        player.line(targets, nature || "green");
+                    }
+                    game.log(player, "对", str, "发动了", "【" + get.skillTranslation(skill, player) + "】");
+                } else {
+                    game.log(player, "发动了", "【" + get.skillTranslation(skill, player) + "】");
+                }
+                let players = player.getSkills(false, false, false);
+                let equips = player.getSkills("e");
+                let global = lib.skill.global.slice(0);
+                let logInfo = {
+                    skill: skill,
+                    targets: targets,
+                    event: _status.event,
+                };
+                if (info1.sourceSkill) {
+                    logInfo.sourceSkill = info1.sourceSkill;
+                    if (global.includes(info1.sourceSkill)) {
+                        logInfo.type = "global";
+                    } else if (players.includes(info1.sourceSkill)) {
+                        logInfo.type = "player";
+                    } else if (equips.includes(info1.sourceSkill)) {
+                        logInfo.type = "equip";
+                    }
+                } else {
+                    if (global.includes(skill)) {
+                        logInfo.sourceSkill = skill;
+                        logInfo.type = "global";
+                    } else if (players.includes(skill)) {
+                        logInfo.sourceSkill = skill;
+                        logInfo.type = "player";
+                    } else if (equips.includes(skill)) {
+                        logInfo.sourceSkill = skill;
+                        logInfo.type = "equip";
+                    } else {
+                        let bool = false;
+                        for (let i of players) {
+                            let expand = [i];
+                            game.expandSkills(expand);
+                            if (expand.includes(skill)) {
+                                bool = true;
+                                logInfo.sourceSkill = i;
+                                logInfo.type = "player";
+                                break;
+                            }
+                        }
+                        if (!bool) {
+                            for (let i of players) {
+                                let expand = [i];
+                                game.expandSkills(expand);
+                                if (expand.includes(skill)) {
+                                    logInfo.sourceSkill = i;
+                                    logInfo.type = "equip";
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                let next = game.createEvent("logSkill", false), evt = _status.event;
+                next.player = player;
+                next.forceDie = true;
+                next.includeOut = true;
+                evt.next.remove(next);
+                if (evt.logSkill) {
+                    evt = evt.getParent();
+                }
+                for (const i in logInfo) {
+                    if (i == "event") {
+                        next.log_event = logInfo[i];
+                    } else {
+                        next[i] = logInfo[i];
+                    }
+                }
+                evt.after.push(next);
+                next.setContent("emptyEvent");
+                player.getHistory("useSkill").push(logInfo);
+                const next2 = game.createEvent("logSkillBegin", false);
+                next2.player = player;
+                next2.forceDie = true;
+                next2.includeOut = true;
+                for (const i in logInfo) {
+                    if (i == "event") {
+                        next2.log_event = logInfo[i];
+                    } else {
+                        next2[i] = logInfo[i];
+                    }
+                }
+                next2.setContent("emptyEvent");
+            } else {
+                player.logSkill(skill, targets, nature);
+            }
+        },
     }
     const gainCardsfunc =  gainCards;
     Object.entries(SetPlayerFunc).forEach(([name, func]) => {
@@ -553,14 +687,14 @@ lib.element.player.addSkill = new Proxy(originalAddSkill, {
 */
 /*
 // 原始的 get.effect 函数
-const originalEffect = get.effect;
+const originallogSkill = lib.element.player.logSkill;
 
 // 用 Proxy 包裹原始函数以进行调用监听
-get.effect = new Proxy(originalEffect, {
+lib.element.player.logSkill = new Proxy(originallogSkill, {
     
     apply(target, thisArg, argumentsList) {
         debugger;
-        console.log(`[get.effect 被调用]`, {
+        console.log(`[logSkill 被调用]`, {
             this: thisArg,
             args: argumentsList,
             timestamp: new Date()
@@ -569,7 +703,7 @@ get.effect = new Proxy(originalEffect, {
         // 执行原始函数
         const result = Reflect.apply(target, thisArg, argumentsList);
 
-        console.log(`[get.effect 调用结果]`, {
+        console.log(`[logSkill 调用结果]`, {
             result,
             timestamp: new Date()
         });
